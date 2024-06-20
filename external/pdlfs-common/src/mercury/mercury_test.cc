@@ -17,7 +17,7 @@
 namespace pdlfs {
 namespace rpc {
 
-static const std::string kProto = "bmi+tcp://127.0.0.1:10101";
+static const std::string kProto = "ofi+tcp://127.0.0.1:10101";
 // True if multiple client threads can call RPC simultaneously
 static const bool kAllowConcurrentRPC = false;
 
