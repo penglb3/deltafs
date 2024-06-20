@@ -77,8 +77,9 @@ mpirun -n 2 env DELTAFS_MetadataSrvAddrs=127.0.0.1:10101 DELTAFS_NumOfMetadataSr
 ```
 
 IMPORTANT NOTES:
-- If you don't see `libdeltafs-hook.so`, check if you have turned on **`BUILD_SHARED_LIBS`** for DeltaFS.
+- If you don't see `libdeltafs-hook.so`, check if **`BUILD_SHARED_LIBS`** is turned on for DeltaFS.
 - **Make sure to include the "/dfs" prefix in path.** It is the signal that the hook should hand this request to DeltaFS instead of your local FS.
+- **Restart the server after each run and DO NOT USE `-i` parameter**. DeltaFS does NOT SUPPORT `rmdir` and `rename` (and their `unlink` checks for file type, very droll indeed) so the directory created can never be deleted. The hook pretends that these operations work but in fact they don't and never will, I do this just to make running mdtest easier. This also means **mdtest results for Dir Rename and Dir Remove ARE UNRELIABLE**.
 
 Again, if you want to run it across multiple machines, replace the metadata server address with real IPs. 
 
