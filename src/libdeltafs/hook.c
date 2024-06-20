@@ -48,10 +48,9 @@ static inline int is_mount_path(const char *path) {
 
 static inline const char *get_dfs_path(const char *path) {
   // if the mount path is /dfs
-  // input  : /dfs/text.txt
-  // output : /text.txt
-  // TODO: improve the robustness
-  return path + strlen(DFS_MOUNT_POINT);
+  // input  : /dfs/text.txt | /dfs
+  // output : /text.txt     | /
+  return path[DFS_MNTPT_LEN] ? path + DFS_MNTPT_LEN : "/";
 }
 
 static inline void assign_fnptr(void **fnptr, void *new_fnptr) {
