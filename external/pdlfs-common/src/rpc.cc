@@ -30,7 +30,11 @@
 namespace pdlfs {
 
 RPCOptions::RPCOptions()
+#ifdef PDLFS_MERCURY_RPC
+    : impl(rpc::kMercuryRPC),
+#else
     : impl(rpc::kSocketRPC),
+#endif
       mode(rpc::kServerClient),
       rpc_timeout(5000000),
       num_rpc_threads(1),
