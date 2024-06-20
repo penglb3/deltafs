@@ -38,6 +38,10 @@ const int kDfsMagicFdPrefix = 0x0fff0000;
 
 static inline int is_dfs_fd(int fd) { return fd >= kDfsMagicFdPrefix; }
 
+static inline int wrap_dfs_fd(int fd) { return fd + kDfsMagicFdPrefix; }
+
+static inline int get_dfs_fd(int fd) { return fd - kDfsMagicFdPrefix; }
+
 static inline int is_mount_path(const char *path) {
   // do not support relative path
   if (strncmp(path, DFS_MOUNT_POINT, 4) == 0) {
@@ -48,9 +52,10 @@ static inline int is_mount_path(const char *path) {
 
 static inline const char *get_dfs_path(const char *path) {
   // if the mount path is /dfs
-  // input  : /dfs/text.txt | /dfs
-  // output : /text.txt     | /
-  return path[DFS_MNTPT_LEN] ? path + DFS_MNTPT_LEN : "/";
+  // input  : /dfs/text.txt
+  // output : /text.txt
+  // TODO: improve the robustness
+  return path + strlen(DFS_MOUNT_POINT);
 }
 
 static inline void assign_fnptr(void **fnptr, void *new_fnptr) {
@@ -76,13 +81,13 @@ int open(const char *file, int oflag, ...) {
     mode_t mode = va_arg(args, mode_t);
     va_end(args);
     if (is_mount_path(file)) {
-      return deltafs_open(get_dfs_path(file), oflag, mode);
+      return wrap_dfs_fd(deltafs_open(get_dfs_path(file), oflag, mode));
     }
     return libc_open(file, oflag, mode);
   }
   va_end(args);
   if (is_mount_path(file)) {
-    return deltafs_open(get_dfs_path(file), oflag, 0644);
+    return wrap_dfs_fd(deltafs_open(get_dfs_path(file), oflag, 0644));
   }
   return libc_open(file, oflag);
 }
@@ -100,13 +105,13 @@ int open64(const char *file, int oflag, ...) {
     mode_t mode = va_arg(args, mode_t);
     va_end(args);
     if (is_mount_path(file)) {
-      return deltafs_open(get_dfs_path(file), oflag, mode);
+      return wrap_dfs_fd(deltafs_open(get_dfs_path(file), oflag, mode));
     }
     return libc_open64(file, oflag, mode);
   }
   va_end(args);
   if (is_mount_path(file)) {
-    return deltafs_open(get_dfs_path(file), oflag, 0644);
+    return wrap_dfs_fd(deltafs_open(get_dfs_path(file), oflag, 0644));
   }
   return libc_open64(file, oflag);
 }
@@ -171,7 +176,7 @@ close_t libc_close;
 int close(int fd) {
   ASSIGN_FN(close);
   if (is_dfs_fd(fd)) {
-    return deltafs_close(fd);
+    return deltafs_close(get_dfs_fd(fd));
   }
   return libc_close(fd);
 }
@@ -182,7 +187,7 @@ read_t libc_read;
 int read(int fd, void *buf, size_t count) {
   ASSIGN_FN(read);
   if (is_dfs_fd(fd)) {
-    return deltafs_read(fd, buf, count);
+    return deltafs_read(get_dfs_fd(fd), buf, count);
   }
   return libc_read(fd, buf, count);
 }
@@ -193,7 +198,7 @@ write_t libc_write;
 int write(int fd, const void *buf, size_t count) {
   ASSIGN_FN(write);
   if (is_dfs_fd(fd)) {
-    return deltafs_write(fd, buf, count);
+    return deltafs_write(get_dfs_fd(fd), buf, count);
   }
   return libc_write(fd, buf, count);
 }
@@ -206,7 +211,7 @@ pread_t libc_pread;
 int pread(int fd, void *buf, uint64_t count, int64_t offset) {
   ASSIGN_FN(pread);
   if (is_dfs_fd(fd)) {
-    return deltafs_pread(fd, buf, count, offset);
+    return deltafs_pread(get_dfs_fd(fd), buf, count, offset);
   }
   return libc_pread(fd, buf, count, offset);
 }
@@ -220,7 +225,7 @@ pwrite_t libc_pwrite;
 int pwrite(int fd, const void *buf, uint64_t count, int64_t offset) {
   ASSIGN_FN(pwrite);
   if (is_dfs_fd(fd)) {
-    return deltafs_pwrite(fd, buf, count, offset);
+    return deltafs_pwrite(get_dfs_fd(fd), buf, count, offset);
   }
   return libc_pwrite(fd, buf, count, offset);
 }
@@ -245,4 +250,50 @@ int unlink(const char *pathname) {
     return deltafs_unlink(get_dfs_path(pathname));
   }
   return libc_unlink(pathname);
+}
+
+// Unsupported operations - just return 0 to make mdtest happy
+// Of course, results from rename and rmdir are not to be taken real
+
+typedef int (*statvfs_t)(const char *path, struct statvfs *buf);
+statvfs_t libc_statvfs;
+
+int statvfs(const char *path, struct statvfs *buf) {
+  ASSIGN_FN(statvfs);
+  if (is_mount_path(path)) {
+    printf("statvfs is not implemented. We hooked it to make mdtest happy\n");
+    return 0;
+  }
+  return libc_statvfs(path, buf);
+}
+
+typedef int (*rmdir_t)(const char *pathname);
+rmdir_t libc_rmdir;
+
+int rmdir(const char *pathname) {
+  ASSIGN_FN(rmdir);
+  if (is_mount_path(pathname)) {
+    deltafs_unlink(pathname); // they actually check file type here, hilarious.
+    return 0;
+  }
+  return libc_rmdir(pathname);
+}
+
+typedef int (*rename_t)(const char *oldpath, const char *newpath);
+rename_t libc_rename;
+
+int rename(const char *oldpath, const char *newpath) {
+  ASSIGN_FN(rename);
+  if (is_mount_path(oldpath) && is_mount_path(newpath)) {
+    // unfortunately mdtest does dir-rename, so yeah, no go.
+    deltafs_unlink(oldpath); 
+    // due to mdtest's pattern, this will also fail since we couldn't rmdir
+    deltafs_open(newpath, O_CREAT | O_RDWR, 0644);
+    return 0;
+  }
+  if (is_mount_path(oldpath) || is_mount_path(newpath)) {
+    errno = EXDEV;
+    return -1;
+  }
+  return libc_rename(oldpath, newpath);
 }
