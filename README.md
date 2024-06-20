@@ -1,5 +1,9 @@
 # DeltaFS (that actually runs)
-Original repo: https://github.com/pdlfs/deltafs
+[Original repo](https://github.com/pdlfs/deltafs)
+
+[My issue (rant) on the original](https://github.com/pdlfs/deltafs/issues/8)
+
+This is my debugged and syscall-hooked version. Unlike the original, IT FKING WORKS.
 
 ## Building
 Tested under Ubuntu 22.04 with gcc 11.4.0
@@ -39,15 +43,16 @@ sudo checkinstall -pkgname mercury
 
 ### Get DeltaFS source code and compile
 ```bash
-# OF COURSE YOU ARE GOING TO USE MY FIXED VERSION.
+# Use my version, or how are you going to run mdtest?
 git clone https://github.com/penglb3/deltafs.git
 cd deltafs
 mkdir build && cd build
-ccmake -DDELTAFS_COMMON_INTREE=ON -DDELTAFS_MPI=ON -DPDLFS_MERCURY_RPC=ON -DPDLFS_GFLAGS=ON -DPDLFS_GLOG=ON -DPDLFS_SNAPPY=ON ..
+ccmake -DBUILD_SHARED_LIBS=ON -DDELTAFS_COMMON_INTREE=ON -DDELTAFS_MPI=ON -DPDLFS_MERCURY_RPC=ON -DPDLFS_GFLAGS=ON -DPDLFS_GLOG=ON -DPDLFS_SNAPPY=ON ..
 make -j
 ```
 
 ## Running
+### Local Testing
 Server side:
 ```bash
 DELTAFS_MetadataSrvAddrs=127.0.0.1:10101 ./build/src/server/deltafs-srvr -v=1 -logtostderr
@@ -60,4 +65,22 @@ DELTAFS_MetadataSrvAddrs=127.0.0.1:10101 DELTAFS_NumOfMetadataSrvs=1 ./build/src
 
 To run on multiple machines instead of local, change all IPs above to real IPs.
 
-TODO: hooking syscalls so mdtest will run.
+### Run mdtest
+I have added a hook to syscalls (`hook.c`) that will direct certain requests into DeltaFS logic, link the mdtest with it and you can test DeltaFS with mdtest.
+
+I will assume that you have already downloaded and compiled ior/mdtest and omit its installation steps here.
+If you haven't, you can get it from [ior official github site](https://github.com/hpc/ior).
+
+Server side is the same as above. On client side you run:
+```bash
+mpirun -n 2 env DELTAFS_MetadataSrvAddrs=127.0.0.1:10101 DELTAFS_NumOfMetadataSrvs=1 LD_PRELOAD=./build/src/libdeltafs/libdeltafs-hook.so mdtest -d /dfs/mdtest -n 10
+```
+
+IMPORTANT NOTES:
+- If you don't see `libdeltafs-hook.so`, check if you have turned on **`BUILD_SHARED_LIBS`** for DeltaFS.
+- **Make sure to include the "/dfs" prefix in path.** It is the signal that the hook should hand this request to DeltaFS instead of your local FS.
+
+Again, if you want to run it across multiple machines, replace the metadata server address with real IPs. 
+
+TODO: For now the `libdeltafs-hook.so` is linking to `libdeltafs.so` with an absolute path. I'll see if I can fix it. 
+But anyway, it will run mdtest now!
