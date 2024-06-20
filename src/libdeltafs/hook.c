@@ -14,7 +14,7 @@
 #include "deltafs/deltafs_api.h"
 
 #define DFS_MOUNT_POINT "/dfs"
-const int kDfsMagicFdPrefix = 0xffff0000;
+const int kDfsMagicFdPrefix = 0x0fff0000;
 
 // extern void InitPreload();
 // extern void DestroyPreload();
@@ -121,6 +121,38 @@ int stat(const char *path, struct stat *buf) {
     return deltafs_stat(get_dfs_path(path), buf);
   }
   return libc_stat(path, buf);
+}
+
+typedef int (*statx_t)(int dirfd, const char *restrict pathname, int flags,
+                       unsigned int mask, struct statx *restrict statxbuf);
+statx_t libc_statx;
+
+int statx(int dirfd, const char *restrict pathname, int flags,
+          unsigned int mask, struct statx *restrict statxbuf) {
+  ASSIGN_FN(statx);
+  if (is_mount_path(pathname)) {
+    struct stat statbuf;
+    const char *p = get_dfs_path(pathname);
+    int ret = deltafs_stat(p, &statbuf);
+    if (ret != 0) {
+      return ret;
+    }
+    statxbuf->stx_ino = statbuf.st_ino;
+    statxbuf->stx_nlink = statbuf.st_nlink;
+    statxbuf->stx_blksize = statbuf.st_blksize;
+    statxbuf->stx_blocks = statbuf.st_blocks;
+    statxbuf->stx_gid = statbuf.st_gid;
+    statxbuf->stx_uid = statbuf.st_uid;
+    statxbuf->stx_mode = statbuf.st_mode;
+    statxbuf->stx_size = statbuf.st_size;
+    statxbuf->stx_dev_major = statbuf.st_dev;
+    statxbuf->stx_rdev_major = statbuf.st_rdev;
+    statxbuf->stx_atime.tv_sec = statbuf.st_atime;
+    statxbuf->stx_ctime.tv_sec = statbuf.st_ctime;
+    statxbuf->stx_mtime.tv_sec = statbuf.st_mtime;
+    return ret;
+  }
+  return libc_statx(dirfd, pathname, flags, mask, statxbuf);
 }
 
 typedef int (*access_t)(const char *pathname, int mode);
