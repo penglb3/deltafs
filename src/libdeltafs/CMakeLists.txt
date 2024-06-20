@@ -117,6 +117,10 @@ if (THREADS_HAVE_PTHREAD_ARG)
     target_compile_options(deltafs PUBLIC "-pthread")
 endif()
 
+add_library(deltafs-hook SHARED hook.c)
+target_compile_options(deltafs-hook PUBLIC -fPIC)
+target_link_libraries(deltafs-hook deltafs)
+
 # special handling for MPI, where the config comes in via MPI_<lang>_ vars.
 # we only add to the build interface so that we don't put hardcoded paths
 # in the config files.
