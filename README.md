@@ -46,9 +46,8 @@ sudo checkinstall -pkgname mercury
 # Use my version, or how are you going to run mdtest?
 git clone https://github.com/penglb3/deltafs.git
 cd deltafs
-mkdir build && cd build
-ccmake -DBUILD_SHARED_LIBS=ON -DDELTAFS_COMMON_INTREE=ON -DDELTAFS_MPI=ON -DPDLFS_MERCURY_RPC=ON -DPDLFS_GFLAGS=ON -DPDLFS_GLOG=ON -DPDLFS_SNAPPY=ON ..
-make -j
+cmake -B build -GNinja -DBUILD_SHARED_LIBS=ON -DDELTAFS_COMMON_INTREE=ON -DDELTAFS_MPI=ON -DPDLFS_MERCURY_RPC=ON -DPDLFS_GFLAGS=ON -DPDLFS_GLOG=ON -DPDLFS_SNAPPY=ON
+cmake --build build
 ```
 
 ## Running
@@ -76,10 +75,11 @@ Server side is the same as above. On client side you run:
 mpirun -n 2 env DELTAFS_MetadataSrvAddrs=127.0.0.1:10101 DELTAFS_NumOfMetadataSrvs=1 LD_PRELOAD=./build/src/libdeltafs/libdeltafs-hook.so mdtest -d /dfs/mdtest -n 10
 ```
 
-IMPORTANT NOTES:
-- If you don't see `libdeltafs-hook.so`, check if **`BUILD_SHARED_LIBS`** is turned on for DeltaFS.
+**IMPORTANT NOTES**:
 - **Make sure to include the "/dfs" prefix in path.** It is the signal that the hook should hand this request to DeltaFS instead of your local FS.
 - **Restart the server after each run and DO NOT USE `-i` parameter**. DeltaFS does NOT SUPPORT `rmdir` and `rename` (and their `unlink` checks for file type, very droll indeed) so the directory created can never be deleted. The hook pretends that these operations work but in fact they don't and never will, I do this just to make running mdtest easier. This also means **mdtest results for Dir Rename and Dir Remove ARE UNRELIABLE**.
+- 
+- If you don't see `libdeltafs-hook.so`, check if `BUILD_SHARED_LIBS` is turned on for DeltaFS.
 
 Again, if you want to run it across multiple machines, replace the metadata server address with real IPs. 
 
