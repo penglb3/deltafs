@@ -16,6 +16,9 @@
 namespace pdlfs {
 namespace config {
 
+// Return the number of threads in the pool
+// e.g. 2
+extern std::string NumOfThreads();
 // Return the number of physcial metadata server.
 // e.g. 16
 extern std::string NumOfMetadataSrvs();
