@@ -49,6 +49,7 @@ inline void ToLowerCase(std::string* str) {
     }                                                    \
   }
 
+CONF_LOADER_UI64(NumOfThreads)
 CONF_LOADER_UI64(NumOfMetadataSrvs)
 CONF_LOADER_UI64(NumOfVirMetadataSrvs)
 CONF_LOADER_UI64(InstanceId)
