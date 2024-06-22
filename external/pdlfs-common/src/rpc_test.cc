@@ -39,6 +39,7 @@ class RPCTest : public rpc::If {
   }
 };
 
+// Mercury RPC doesn't support 0.0.0.0 though they said they do.
 #ifndef PDLFS_MERCURY_RPC
 TEST(RPCTest, Addr) {
   RPC* rpc = Open("0.0.0.0:0");
@@ -47,10 +48,15 @@ TEST(RPCTest, Addr) {
   fprintf(stderr, "Actual Uri: %s\n", rpc->GetUri().c_str());
   delete rpc;
 }
+#define PROTO1 "udp"
+#define PROTO2 "tcp"
+#else // protocal udp and tcp doesn't work for mercury on OFI.
+#define PROTO1 "ofi+tcp"
+#define PROTO2 "ofi+sockets"
 #endif
 
 TEST(RPCTest, Open) {
-  const char* uris[2] = {"udp://127.0.0.1:22222", "tcp://127.0.0.1:22222"};
+  const char* uris[2] = {PROTO1 "://127.0.0.1:22222", PROTO2 "://127.0.0.1:22222"};
   for (int i = 0; i < 2; i++) {
     fprintf(stderr, "Uri: %s\n", uris[i]);
     RPC* rpc = Open(uris[i]);
@@ -65,7 +71,7 @@ TEST(RPCTest, Open) {
 
 TEST(RPCTest, SendAndRecv) {
   ThreadPool* extra_worker = ThreadPool::NewFixed(1, true);
-  const char* uris[2] = {"udp://127.0.0.1:22222", "tcp://127.0.0.1:22222"};
+  const char* uris[2] = {PROTO1 "://127.0.0.1:22222", PROTO2 "://127.0.0.1:22222"};
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2; j++) {
       RPC* rpc;
