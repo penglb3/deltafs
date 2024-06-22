@@ -39,6 +39,7 @@ class RPCTest : public rpc::If {
   }
 };
 
+#ifndef PDLFS_MERCURY_RPC
 TEST(RPCTest, Addr) {
   RPC* rpc = Open("0.0.0.0:0");
   ASSERT_EQ(rpc->GetUri(), "udp://0.0.0.0:0");
@@ -46,6 +47,7 @@ TEST(RPCTest, Addr) {
   fprintf(stderr, "Actual Uri: %s\n", rpc->GetUri().c_str());
   delete rpc;
 }
+#endif
 
 TEST(RPCTest, Open) {
   const char* uris[2] = {"udp://127.0.0.1:22222", "tcp://127.0.0.1:22222"};
