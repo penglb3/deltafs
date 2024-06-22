@@ -409,7 +409,9 @@ void MetadataServer::Builder::OpenRPC() {
   if (ok()) {
     wrapper_ = new RPCWrapper(mdsmon_);
     rpc_ = new RPCServer(wrapper_);
-    rpc_->AddChannel(uri, 4);  // FIXME
+    uint64_t n_threads = 0;
+    config::LoadNumOfThreads(&n_threads);
+    rpc_->AddChannel(uri, n_threads);  // FIXME
   }
 }
 
