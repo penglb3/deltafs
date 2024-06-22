@@ -46,6 +46,7 @@ static std::string LoadFromEnv(const char* key) {
 namespace pdlfs {
 namespace config {
 
+DEFINE_FLAG(NumOfThreads, "2")
 DEFINE_FLAG(NumOfMetadataSrvs, "1")
 DEFINE_FLAG(NumOfVirMetadataSrvs, "1")
 DEFINE_FLAG(InstanceId, "0")
