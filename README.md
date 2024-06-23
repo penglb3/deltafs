@@ -12,7 +12,7 @@ Tested under Ubuntu 22.04 with gcc 11.4.0
 I tend to use openmpi, you can also use mpich if you like.
 ```bash
 sudo apt install gcc g++ make autoconf automake libtool pkg-config
-sudo apt install cmake cmake-curses-gui checkinstall
+sudo apt install cmake ninja-build checkinstall
 sudo apt install libsnappy-dev libgflags-dev libgoogle-glog-dev
 sudo apt install libopenmpi-dev libjson-c-dev
 ```
@@ -35,11 +35,13 @@ sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 git clone --recurse-submodules https://github.com/mercury-hpc/mercury.git
 # My version: https://github.com/mercury-hpc/mercury/tree/73df83f039971575cd04b6be58402bafe54da05a
 cd mercury
-mkdir build && cd build
-ccmake -DMERCURY_USE_OFI=ON ..
-make -j
+cmake -B build -DNA_USE_OFI=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON
+cmake --build build
+cd build
 sudo checkinstall -pkgname mercury
 ```
+If you see rpc related testings fail, it might be that your machine has more CPUs than the default handle max in testing code. 
+In that case simply change the `HG_TEST_HANDLE_MAX` variable in `Testing/unit/hg/mercury_unit.c` to a bigger value, then all tests should pass.
 
 ### Get DeltaFS source code and compile
 ```bash
