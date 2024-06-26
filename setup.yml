@@ -1,0 +1,32 @@
+- hosts: 'client'
+  become: true
+  tasks:
+  - name: Install dependencies
+    ansible.builtin.apt:
+      pkg:
+      - gcc
+      - g++
+      - make
+      - autoconf
+      - automake
+      - libtool
+      - pkg-config
+      - cmake
+      - checkinstall
+      - libsnappy-dev
+      - libgflags-dev
+      - libgoogle-glog-dev
+      - ibopenmpi-dev
+      - libjson-c-dev
+  - name: Copy .deb packages (OFI, mercury, deltafs)
+    ansible.builtin.copy:
+      src: '{{ item }}'
+      dest: '/tmp/'
+      mode: 0755
+    with_fileglob:
+      - './build/*.deb'
+  - name: Install .deb packages
+    ansible.builtin.shell: |
+      sudo dpkg -i libfabric*.deb
+      sudo dpkg -i mercury*.deb
+      sudo dpkg -i deltafs*.deb
