@@ -119,3 +119,9 @@ The clients can also be started via `mpirun` on the server machine. Note that I 
 mpirun -n 4 --host node7:2,node8:2 env LD_PRELOAD=/usr/local/lib/libdeltafs-hook.so "DELTAFS_MetadataSrvAddrs=10.10.1.7:10101&10.10.1.7:10102" DELTAFS_NumOfMetadataSrvs=2 ~/mdtest -d /dfs/mdtest -n 100000
 ```
 **!! AGAIN! RESTART THE SERVER AFTER EACH RUN !!**
+
+In case you want to test many metadata servers, let's say 32, you can generate the server addresses with:
+```bash
+seq -s'&' -f '10.10.1.7:%g' 10101 10132
+```
+You can plug it in the server/client command like: `DELTAFS_MetadataSrvAddrs=$(seq -s'&' -f '10.10.1.7:%g' 10101 10132)`
