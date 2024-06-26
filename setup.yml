@@ -16,7 +16,7 @@
       - libsnappy-dev
       - libgflags-dev
       - libgoogle-glog-dev
-      - ibopenmpi-dev
+      - libopenmpi-dev
       - libjson-c-dev
   - name: Copy .deb packages (OFI, mercury, deltafs)
     ansible.builtin.copy:
@@ -27,6 +27,6 @@
       - './build/*.deb'
   - name: Install .deb packages
     ansible.builtin.shell: |
-      sudo dpkg -i libfabric*.deb
-      sudo dpkg -i mercury*.deb
-      sudo dpkg -i deltafs*.deb
+      sudo dpkg -i /tmp/libfabric*.deb
+      sudo dpkg -i /tmp/mercury*.deb
+      sudo dpkg -i /tmp/deltafs*.deb

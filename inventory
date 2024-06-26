@@ -1,4 +1,4 @@
-[clients]
+[client]
 node[0:5]
 node[7:8]
 
