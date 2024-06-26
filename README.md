@@ -98,8 +98,11 @@ To automate deployment, we use ansible. You can get it by:
 sudo add-apt-repository -y ppa:ansible/ansible
 sudo apt install -y ansible
 ```
-Then you run the ansible to set up all machines:
+Then you copy all debs into build directory and run the ansible to set up all machines:
 ```bash
+cp ../libfabric-1.21.0/*.deb build/
+cp ../mercury/*.deb build/
+# You can ls build/*.deb to check that you do have 3 packages.
 ansible-playbook -i inventory setup.yml
 ```
 An example of inventory is given in the repo, you can customize it based on your environments.
