@@ -91,7 +91,8 @@ mpirun -n 2 env DELTAFS_MetadataSrvAddrs=127.0.0.1:10101 DELTAFS_NumOfMetadataSr
 
 Again, if you want to run it across multiple machines, replace the metadata server address with real IPs. 
 
-## Deploying on multiple machines
+## Deploying and testing on multiple machines
+### Setting up clients
 Make sure you did all 3 `checkinstall` steps above because we are gonna need to distribute them now.
 To automate deployment, we use ansible. You can get it by:
 ```bash
@@ -106,3 +107,15 @@ cp ../mercury/*.deb build/
 ansible-playbook -i inventory setup.yml
 ```
 An example of inventory is given in the repo, you can customize it based on your environments.
+
+### Testing (using multiple clients across multiple machines)
+Starting multiple deltafs server is similar as above, just use `mpirun`
+```bash
+mpirun -n 2 env "DELTAFS_MetadataSrvAddrs=10.10.1.7:10101&10.10.1.7:10102" deltafs-srvr -v=1 -logtostderr
+```
+
+The clients can also be started via `mpirun` on the server machine. Note that I have copied `mdtest` to user's home dir in advance.
+```bash
+mpirun -n 4 --host node7:2,node8:2 env LD_PRELOAD=/usr/local/lib/libdeltafs-hook.so "DELTAFS_MetadataSrvAddrs=10.10.1.7:10101&10.10.1.7:10102" DELTAFS_NumOfMetadataSrvs=2 ~/mdtest -d /dfs/mdtest -n 100000
+```
+**!! AGAIN! RESTART THE SERVER AFTER EACH RUN !!**
