@@ -191,7 +191,7 @@ write_basic_package_version_file(
 configure_file (deltafs-config.cmake.in deltafs-config.cmake @ONLY)
 
 # "make install" rules...
-install (TARGETS deltafs EXPORT deltafs-targets
+install (TARGETS deltafs deltafs-hook EXPORT deltafs-targets
          ARCHIVE DESTINATION lib
          LIBRARY DESTINATION lib)
 install (EXPORT deltafs-targets
