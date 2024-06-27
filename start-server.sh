@@ -17,5 +17,4 @@ export DELTAFS_NumOfMetadataSrvs=$N_SERVERS
 export DELTAFS_NumOfThreads=$N_THREADS
 
 mpirun -n $N_SERVERS \
-# numactl --all -C 0-$(($N_SERVERS - 1)) -- \
-deltafs-srvr -v=1 -logtostderr
+deltafs-srvr -v=0 -logtostderr
