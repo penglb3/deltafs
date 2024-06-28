@@ -11,6 +11,7 @@ FORMAT="$IP:%g"
 export DELTAFS_NumOfMetadataSrvs=1
 export DELTAFS_NumOfVirMetadataSrvs=1
 export DELTAFS_InstanceId=0
+export DELTAFS_NumOfThreads=16
 export DELTAFS_Outputs=/tmp/deltafs_outputs-$OMPI_COMM_WORLD_NODE_RANK
 export DELTAFS_RunDir=/tmp/deltafs_runs-$OMPI_COMM_WORLD_NODE_RANK
 export DELTAFS_MetadataSrvAddrs=$IP:$PORT

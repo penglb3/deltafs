@@ -12,16 +12,22 @@ parser.add_argument('--mdtest_args', type=str, default='-d /dfs/mdtest -n 10 -u'
 args = parser.parse_args()
 
 hosts = args.hosts.split(',')
-slots = [i for i in map(lambda x: int(x[x.find(':'):]), hosts)]
+slots = [i for i in map(lambda x: int(x[x.find(':') + 1:]), hosts)]
 cmd_list = []
 host_idx = 0
+cpu_start = 0
+cpm = args.clients_per_meta
 for i in range(args.num_meta):
-    cmd = f'mpirun -np {args.clients_per_meta} --host {hosts[host_idx]}'
-    cmd += 'env LD_PRELOAD=/usr/local/lib/libdeltafs-hook.so DELTAFS_NumOfMetadataSrvs=1'
-    cmd += f'DELTAFS_MetadataSrvAddrs={args.ip}:{args.base_port + i}'
+    cpu_set = ','.join(str(j) for j in range(cpu_start, cpu_start + cpm))
+    cmd = f'mpirun -np {args.clients_per_meta} --host {hosts[host_idx]} --cpu-list {cpu_set} '
+    cmd += 'env LD_PRELOAD=/usr/local/lib/libdeltafs-hook.so DELTAFS_NumOfMetadataSrvs=1 '
+    cmd += f'DELTAFS_MetadataSrvAddrs={args.ip}:{args.base_port + i} DELTAFS_InstanceId={i} '
+    # cmd += f'numactl --all -C {slots[host_idx] - cpm}-{slots[host_idx] - 1} -- '
     cmd += f'~/mdtest {args.mdtest_args}'
     cmd_list.append(cmd)
-    slots[host_idx] -= args.clients_per_meta
-    if slots[host_idx] <= 0:
+    print(cmd)
+    cpu_start += cpm
+    if cpu_start >= slots[host_idx]:
         host_idx += 1
+        cpu_start = 0
 os.system(' & '.join(cmd_list))
