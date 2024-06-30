@@ -20,7 +20,10 @@ cpm = args.clients_per_meta
 for i in range(args.num_meta):
     cpu_set = ','.join(str(j) for j in range(cpu_start, cpu_start + cpm))
     cmd = f'mpirun -np {args.clients_per_meta} --host {hosts[host_idx]} --cpu-list {cpu_set} '
+    cmd += '--mca btl_tcp_if_include enp65s0f0np0 '
+    # cmd += '--mca pml ob1 --mca btl openib,self,vader --mca btl_openib_cpc_include rdmacm --mca btl_openib_rroce_enable 1 '
     cmd += 'env LD_PRELOAD=/usr/local/lib/libdeltafs-hook.so DELTAFS_NumOfMetadataSrvs=1 '
+    cmd += "DELTAFS_NumOfThreads=1 "
     cmd += f'DELTAFS_MetadataSrvAddrs={args.ip}:{args.base_port + i} DELTAFS_InstanceId={i} '
     # cmd += f'numactl --all -C {slots[host_idx] - cpm}-{slots[host_idx] - 1} -- '
     cmd += f'~/mdtest {args.mdtest_args}'
