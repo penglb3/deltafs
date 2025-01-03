@@ -116,6 +116,17 @@ int open64(const char *file, int oflag, ...) {
   return libc_open64(file, oflag);
 }
 
+typedef off_t (*lseek_t)(int fd, off_t offset, int whence);
+lseek_t libc_lseek;
+
+off_t lseek(int fd, off_t offset, int whence) {
+  ASSIGN_FN(lseek);
+  if (is_dfs_fd(fd)) {
+    return 0;
+  }
+  return libc_lseek(fd, offset, whence);
+}
+
 typedef off64_t (*lseek64_t)(int fd, off64_t offset, int whence);
 lseek64_t libc_lseek64;
 
