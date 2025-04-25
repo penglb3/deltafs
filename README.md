@@ -131,7 +131,7 @@ Here we started 4 meta servers, each not aware of others.
 
 Then you start the clients using `run-mdtest.py`:
 ```bash
-python3 run-mdtest.py --hosts node1:64,node2:64 --clients_per_meta 32 --num_meta 4 --ip 10.10.1.0 --mdtest_args "-d /dfs/mdtest -n 10000 -u | tee run.log"
+python3 run-mdtest.py --hosts node1:64,node2:64 --clients_per_meta 32 --num_meta 4 --ip 10.10.1.0 --mdtest_args "-d /dfs/mdtest -n 10000 -u" | tee run.log
 ```
 Here we started 4 groups of clients, each containing 32 clients connecting to exactly one meta we started just now. 
 Also note the use of tee to log the outputs for later uses.
