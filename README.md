@@ -118,10 +118,27 @@ The clients can also be started via `mpirun` on the server machine. Note that I 
 ```bash
 mpirun -n 4 --host node7:2,node8:2 env LD_PRELOAD=/usr/local/lib/libdeltafs-hook.so "DELTAFS_MetadataSrvAddrs=10.10.1.7:10101&10.10.1.7:10102" DELTAFS_NumOfMetadataSrvs=2 ~/mdtest -d /dfs/mdtest -n 100000
 ```
+**HOWEVER! This official implementation will not even run to completion if you start 2-4 server processes.**
+Therefore, to complete the test, I would recommend using indepedent server-client pairs and sum up successful runs' results.
+
+First you start several independent metadata servers using `server-runner.sh`:
+```bash
+mpirun -n 4 server-runner.sh 10.10.1.0 10101 1
+```
+Here we started 4 meta servers, each not aware of others.
+
 **!! AGAIN! RESTART THE SERVER AFTER EACH RUN !!**
 
-In case you want to test many metadata servers, let's say 32, you can generate the server addresses with:
+Then you start the clients using `run-mdtest.py`:
 ```bash
-seq -s'&' -f '10.10.1.7:%g' 10101 10132
+python3 run-mdtest.py --hosts node1:64,node2:64 --clients_per_meta 32 --num_meta 4 --ip 10.10.1.0 --mdtest_args "-d /dfs/mdtest -n 10000 -u | tee run.log"
 ```
-You can plug it in the server/client command like: `DELTAFS_MetadataSrvAddrs=$(seq -s'&' -f '10.10.1.7:%g' 10101 10132)`
+Here we started 4 groups of clients, each containing 32 clients connecting to exactly one meta we started just now. 
+Also note the use of tee to log the outputs for later uses.
+
+Most of the time, only a small proportion (<50%) of all groups will complete. 
+I choose to report results of all success runs, which can be achieved by applying the `sum_up.sh` on the output:
+```bash
+./sum_up.sh run.log
+```
+Then you will see the number of successful runs (Column 2) and a sum of each operations' throughput (Column 3).
